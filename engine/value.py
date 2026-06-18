@@ -6,7 +6,6 @@ class Value:
         self.prev = set(_children)
         self.op = _op
 
-        # Default backward function
         self._backward = lambda: None
 
     def __repr__(self):
@@ -20,6 +19,12 @@ class Value:
             '+'
         )
 
+        def add_backward():
+            self.grad = 1.0
+            other.grad = 1.0
+
+        out._backward = add_backward
+
         return out
 
     def __mul__(self, other):
@@ -30,34 +35,57 @@ class Value:
             '*'
         )
 
-        def _backward():
+        def mul_backward():
             self.grad = other.data
             other.grad = self.data
 
-        out._backward = _backward
+        out._backward = mul_backward
 
         return out
 
     def backward(self):
-        self._backward()
 
+        topo = []
+        visited = set()
 
-# -------------------------
-# Testing
-# -------------------------
+        def build_topo(node):
+
+            if node not in visited:
+
+                visited.add(node)
+
+                for child in node.prev:
+                    build_topo(child)
+
+                topo.append(node)
+
+        build_topo(self)
+
+        self.grad = 1.0
+
+        for node in topo[::-1]:
+            node._backward()
+
 
 a = Value(2.0)
 b = Value(3.0)
+c = Value(4.0)
 
-c = a * b
+e = a * b
+d = e + c
 
 print("Before backward:")
 print("a =", a)
 print("b =", b)
 print("c =", c)
+print("e =", e)
+print("d =", d)
 
-c.backward()
+d.backward()
 
 print("\nAfter backward:")
 print("a.grad =", a.grad)
 print("b.grad =", b.grad)
+print("c.grad =", c.grad)
+print("e.grad =", e.grad)
+print("d.grad =", d.grad)
