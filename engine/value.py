@@ -3,6 +3,7 @@ class Value:
     def __init__(self, data, _children=(), _op=''):
         self.data = data
         self.grad = 0.0
+
         self.prev = set(_children)
         self.op = _op
 
@@ -20,8 +21,9 @@ class Value:
         )
 
         def add_backward():
-            self.grad = 1.0
-            other.grad = 1.0
+
+            self.grad += 1.0 * out.grad
+            other.grad += 1.0 * out.grad
 
         out._backward = add_backward
 
@@ -36,8 +38,9 @@ class Value:
         )
 
         def mul_backward():
-            self.grad = other.data
-            other.grad = self.data
+
+            self.grad += other.data * out.grad
+            other.grad += self.data * out.grad
 
         out._backward = mul_backward
 
@@ -67,25 +70,19 @@ class Value:
             node._backward()
 
 
+# -------------------------
+# Testing
+# -------------------------
+
 a = Value(2.0)
 b = Value(3.0)
 c = Value(4.0)
 
-e = a * b
-d = e + c
+x = a * b
+y = x * c
 
-print("Before backward:")
-print("a =", a)
-print("b =", b)
-print("c =", c)
-print("e =", e)
-print("d =", d)
+y.backward()
 
-d.backward()
-
-print("\nAfter backward:")
 print("a.grad =", a.grad)
 print("b.grad =", b.grad)
 print("c.grad =", c.grad)
-print("e.grad =", e.grad)
-print("d.grad =", d.grad)
