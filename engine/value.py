@@ -46,6 +46,22 @@ class Value:
 
         return out
 
+    def relu(self):
+
+        out = Value(
+            self.data if self.data > 0 else 0,
+            (self,),
+            'ReLU'
+        )
+
+        def relu_backward():
+
+            self.grad += (1 if self.data > 0 else 0) * out.grad
+
+        out._backward = relu_backward
+
+        return out
+
     def backward(self):
 
         topo = []
@@ -71,18 +87,18 @@ class Value:
 
 
 # -------------------------
-# Testing
+# Testing ReLU
 # -------------------------
 
-a = Value(2.0)
-b = Value(3.0)
-c = Value(4.0)
+a = Value(-3)
 
-x = a * b
-y = x * c
+b = a.relu()
 
-y.backward()
+print("Forward:")
+print("a =", a)
+print("b =", b)
 
+b.backward()
+
+print("\nBackward:")
 print("a.grad =", a.grad)
-print("b.grad =", b.grad)
-print("c.grad =", c.grad)
